@@ -10,8 +10,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/select.h>
+#include <string.h>
 
+#include <pthread.h>
+
+#include <sys/select.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -19,13 +22,41 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
-
 #include <errno.h>
 
-#include <string.h>
+struct parameter{
+	struct sockaddr_in server;
+	int main_socket;
+	fd_set readfds;
+};
+
+void * server_thread(void * infos){
+	struct parameter * parainfos = infos;
+	char bufferstr[100];
+	int testfd = socket(PF_INET, SOCK_STREAM, 0);
+	int len = sizeof(parainfos->server);
+	FD_SET(testfd,&parainfos->readfds);
+	if((testfd = accept(parainfos->main_socket, (struct sockaddr *)&parainfos->server, &len)) < 0){
+		printf("Fehler bei accept");
+		return -1;
+	}
+	read(testfd,bufferstr, 100);
+	sleep(5);
+	printf("%s\n",bufferstr);
+	return 0;
+}
+
+void * testingint(int infos){
+	printf("halo");
+	return 0;
+}
+
 
 int main(void) {
-	struct sockaddr_in server;
+	struct parameter parainfos;
+	int i;
+	pthread_t threadIT;
+	struct sockaddr_in server, client;
 	int sret;
 	char bufferstr[100];
 	fd_set readfds;
@@ -34,7 +65,7 @@ int main(void) {
 	server.sin_family = AF_INET;
 	server.sin_addr.s_addr = htonl(INADDR_ANY);
 	server.sin_port = htons(1344);
-	int sock1 = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	int sock1 = socket(PF_INET, SOCK_STREAM, 0);
 	bind(sock1, (struct sockaddr*) &server, sizeof(server));
 	if(listen(sock1, 5) == -1 )
 	         return -1;
@@ -45,19 +76,19 @@ int main(void) {
 		timeout.tv_sec=5;
 		timeout.tv_usec = 0;
 		sret = select(10,&readfds,NULL,NULL,&timeout);
-		if(sret == 0){
+		//check if regular input or timeout
+		if(sret < 1){
 			printf("Timeout!\n");
-		}
-		else{
-			read(sock1,bufferstr, 100);
-			printf("%s",bufferstr);
-			close(sock1);
-			sock1 = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-			bind(sock1, (struct sockaddr*) &server, sizeof(server));
-			if(listen(sock1, 5) == -1 )
-				         return -1;
+		}else{
+			parainfos.main_socket=sock1; parainfos.readfds=readfds; parainfos.server=server;
+			int i = 0; int result;
+			pthread_create(&threadIT,NULL,server_thread,&parainfos);
+			//printf("Socket connection initialisert!\n");
+			printf("waiting for thread ...\n");
+		//	server_thread(server,sock1,readfds);
+			pthread_join(threadIT,NULL);
 		}
 	}
-	puts("!!!Hello World!!!"); /* prints !!!Hello World!!! */
+	printf("Server wurde beendet!\n");
 	return EXIT_SUCCESS;
 }
