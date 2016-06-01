@@ -40,9 +40,13 @@ void * server_thread(void * infos){
 		printf("Fehler bei accept");
 		return -1;
 	}
-	read(testfd,bufferstr, 100);
-	sleep(5);
+	printf("incomming: %i vs. set %i \n",testfd,parainfos->main_socket);
+	recv(testfd, bufferstr,50,0);
+	//read(testfd,bufferstr, 100);
 	printf("%s\n",bufferstr);
+	send(testfd, "arknowledge!", strlen("arknowledge!"), 0);
+	memset(bufferstr,0,strlen(bufferstr));
+	close(testfd);
 	return 0;
 }
 
