@@ -33,6 +33,7 @@ struct parameter{
 void * server_thread(void * infos){
 	struct parameter * parainfos = infos;
 	char bufferstr[100];
+	char * bufferstr_size[10];
 	int testfd = socket(PF_INET, SOCK_STREAM, 0);
 	int len = sizeof(parainfos->server);
 	FD_SET(testfd,&parainfos->readfds);
@@ -41,9 +42,23 @@ void * server_thread(void * infos){
 		return -1;
 	}
 	printf("incomming: %i vs. set %i \n",testfd,parainfos->main_socket);
-	recv(testfd, bufferstr,50,0);
-	//read(testfd,bufferstr, 100);
+	//getting the size of the information
+	int remaining;
+	recv(testfd, bufferstr_size,10,0);
+	remaining = atoi(bufferstr_size);
+	int set = remaining;
+	//reading the information within the buffersize
+	while((remaining > 0) && (recv(testfd, bufferstr+(set-remaining),remaining,0)>0)){
+		//memset(bufferstr,0,strlen(bufferstr));
+		printf("...\n");
+		remaining = remaining - remaining;
+		printf("%i\n",remaining);
+	}
+	//setting the end of the string and print it (just for testing purposes)
+	bufferstr[set-1]='\0';
 	printf("%s\n",bufferstr);
+	//read(testfd,bufferstr, 100);
+	//printf("%s\n",bufferstr);
 	send(testfd, "arknowledge!", strlen("arknowledge!"), 0);
 	memset(bufferstr,0,strlen(bufferstr));
 	close(testfd);
