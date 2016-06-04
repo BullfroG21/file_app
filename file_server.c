@@ -31,9 +31,11 @@ struct parameter{
 };
 
 void * server_thread(void * infos){
+	FILE * newfile;
+	newfile = fopen("newfile","w");
 	struct parameter * parainfos = infos;
-	char bufferstr[100];
-	char * bufferstr_size[10];
+	char bufferstr[2048];
+	char * bufferstr_size = malloc(sizeof(char)*10);
 	int testfd = socket(PF_INET, SOCK_STREAM, 0);
 	int len = sizeof(parainfos->server);
 	FD_SET(testfd,&parainfos->readfds);
@@ -46,14 +48,15 @@ void * server_thread(void * infos){
 	int remaining;
 	recv(testfd, bufferstr_size,10,0);
 	remaining = atoi(bufferstr_size);
+	printf("\n%i\n",remaining);
 	int set = remaining;
 	//reading the information within the buffersize
-	while((remaining > 0) && (recv(testfd, bufferstr+(set-remaining),remaining,0)>0)){
+	while((remaining > 0) && (recv(testfd, bufferstr,remaining,0)>0)){
 		//memset(bufferstr,0,strlen(bufferstr));
-		printf("...\n");
+		fwrite(bufferstr,1,remaining,newfile);
 		remaining = remaining - remaining;
-		printf("%i\n",remaining);
 	}
+	fclose(newfile);
 	//setting the end of the string and print it (just for testing purposes)
 	bufferstr[set-1]='\0';
 	printf("%s\n",bufferstr);
@@ -70,7 +73,7 @@ void * testingint(int infos){
 	return 0;
 }
 
-
+int PORT = 1345;
 int main(void) {
 	struct parameter parainfos;
 	int i;
@@ -83,7 +86,7 @@ int main(void) {
 
 	server.sin_family = AF_INET;
 	server.sin_addr.s_addr = htonl(INADDR_ANY);
-	server.sin_port = htons(1344);
+	server.sin_port = htons(PORT);
 	int sock1 = socket(PF_INET, SOCK_STREAM, 0);
 	bind(sock1, (struct sockaddr*) &server, sizeof(server));
 	if(listen(sock1, 5) == -1 )
@@ -94,9 +97,9 @@ int main(void) {
 		FD_SET(sock1,&readfds);
 		timeout.tv_sec=5;
 		timeout.tv_usec = 0;
-		sret = select(10,&readfds,NULL,NULL,&timeout);
+		sret = select(sock1+1,&readfds,NULL,NULL,&timeout);
 		//check if regular input or timeout
-		if(sret < 1){
+		if(sret == 0){
 			printf("Timeout!\n");
 		}else{
 			parainfos.main_socket=sock1; parainfos.readfds=readfds; parainfos.server=server;
