@@ -51,7 +51,6 @@ int recieving_data(int socket_server, FILE * newfile){
 	int remaining;
 	char bufferstr[2048];
 	char bufferstr_size[10];
-	sleep(2);
 	recv(socket_server, bufferstr_size,10,0);
 	printf("~%s\n",bufferstr_size);
 	remaining = atoi(bufferstr_size);
@@ -104,8 +103,8 @@ int main(void) {
 	char incoming[100];
 	int sret;
 	fd_set readfds;
+	printf(">");
 	fgets(actionstr,1024,stdin);
-	printf("\n%s\n",actionstr);
 	//strcpy(actionstr,"add Nackmuhleareawsome");
 	struct timeval timeout;
 	client.sin_family = AF_INET;

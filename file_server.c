@@ -83,8 +83,6 @@ int sending_data(int size, char bufferstr[size],int socket_client){
 	int buffer_size = strlen(bufferstr);
 	sprintf(tmp_info, "%i", buffer_size);
 	strcpy(byte_info+(10-strlen(tmp_info)-1),tmp_info);
-	printf("%i # ",buffer_size);
-	printf("%s",byte_info);
 	send(socket_client, byte_info,10, 0);
 	send(socket_client, bufferstr,strlen(bufferstr), 0);
 	return 1;
@@ -95,7 +93,7 @@ char * getarg_string(int size, char input[size]){
 	char * arg = malloc(sizeof(char)*(strlen(input)-pos));
 	if(pos<strlen(input)){
 			strncpy(arg,input+pos,strlen(input)-pos);
-			arg[strlen(input)]='\0';
+			arg[strlen(arg)-1]='\0';
 			return arg;
 		}
 	return 0;
@@ -106,11 +104,8 @@ int run_action(int port, int size, char input[size]){
 	arguments = getarg_string(strlen(input),input);
 	action = getfirst_string(strlen(input),input);
 	if(strcmp("add",action)==0){
-		printf("Sucess: %s\n",action);
-		printf("\n~%s~\n",arguments);
 		add_files(port,strlen(arguments),arguments);
 	}else if(strcmp("get",action)==0){
-		printf("Sucess: %s\n",action);
 		get_files(port,strlen(arguments),arguments);
 		//int get_files(int PORT,int size,char actionstr[size])
 	}else{
@@ -132,19 +127,16 @@ void * start_communication(void * infos){
 		printf("Fehler bei accept");
 		return -1;
 	}
-	printf("incomming: %i vs. set %i \n",testfd,parainfos->main_socket);
 	//getting the size of the information
 	int remaining;
 	recv(testfd, bufferstr_size,10,0);
 	remaining = atoi(bufferstr_size);
-	printf("\n%i\n",remaining);
 	int set = remaining;
 	//reading the information within the buffersize
 	while((remaining > 0) && (recv(testfd, bufferstr+(set-remaining),remaining,0)>0)){
 		//memset(bufferstr,0,strlen(bufferstr));
 		remaining = remaining - strlen(bufferstr);
 	}
-	printf("%s\n",bufferstr);
 	//setting the end of the string and print it (just for testing purposes)
 	bufferstr[set]='\0';
 
@@ -164,7 +156,6 @@ void * start_communication(void * infos){
 
 
 int get_files(int port,int size,char actionstr[size]){
-	printf("ian mckell");
 	char * bufferstr = malloc(sizeof(char)*2048);
 	struct sockaddr_in server;
 	server.sin_family = AF_INET;
@@ -180,7 +171,6 @@ int get_files(int port,int size,char actionstr[size]){
 	requiredfile = fopen(actionstr,"r");
 	int testfd = socket(PF_INET, SOCK_STREAM, 0);
 	int len = sizeof(server);
-	printf("aloha!");
 	if((testfd = accept(file_socket, (struct sockaddr *)&server, &len)) < 0){
 		printf("Fehler bei accept");
 		return -1;
@@ -194,7 +184,6 @@ int get_files(int port,int size,char actionstr[size]){
 }
 
 int add_files(int PORT,int size,char bufferstr[size]){
-	printf("halo");
 	struct sockaddr_in server;
 	server.sin_family = AF_INET;
 	server.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -251,7 +240,6 @@ int main(void) {
 			parainfos.main_socket=sock1; parainfos.readfds=readfds; parainfos.server=server;
 			int i = 0; int result;
 			pthread_create(&threadIT,NULL,start_communication,&parainfos);
-			//printf("Socket connection initialisert!\n");
 			printf("waiting for thread ...\n");
 		//	server_thread(server,sock1,readfds);
 			pthread_join(threadIT,NULL);
